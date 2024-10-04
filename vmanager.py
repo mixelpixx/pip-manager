@@ -2,8 +2,9 @@ import os
 import shutil
 import venv
 import subprocess
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QListWidget, QPushButton, QLabel, QInputDialog, QMessageBox, QFileDialog, QListWidgetItem, QStyle
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QListWidget, QPushButton, QLabel, QInputDialog, QMessageBox, QFileDialog, QListWidgetItem, QStyle, QToolTip
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QCursor
 
 class VenvManagerTab(QWidget):
     def __init__(self, config):
@@ -20,21 +21,25 @@ class VenvManagerTab(QWidget):
 
         self.create_button = QPushButton("Create Venv")
         self.create_button.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder))
+        self.create_button.setToolTip("Create a new virtual environment")
         self.create_button.clicked.connect(self.create_venv)
         button_layout.addWidget(self.create_button)
 
         self.activate_button = QPushButton("Activate Venv")
         self.activate_button.setIcon(self.style().standardIcon(QStyle.SP_DialogApplyButton))
+        self.activate_button.setToolTip("Activate the selected virtual environment")
         self.activate_button.clicked.connect(self.activate_venv)
         button_layout.addWidget(self.activate_button)
 
         self.delete_button = QPushButton("Delete Venv")
         self.delete_button.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
+        self.delete_button.setToolTip("Delete the selected virtual environment")
         self.delete_button.clicked.connect(self.delete_venv)
         button_layout.addWidget(self.delete_button)
 
         self.refresh_button = QPushButton("Refresh List")
         self.refresh_button.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
+        self.refresh_button.setToolTip("Refresh the list of virtual environments")
         self.refresh_button.clicked.connect(self.refresh_venv_list)
         button_layout.addWidget(self.refresh_button)
 
@@ -44,6 +49,8 @@ class VenvManagerTab(QWidget):
         self.venv_dir = self.config.get('General', 'venv_dir')
         self.active_venv = self.config.get('General', 'last_active_venv')
         self.refresh_venv_list()
+
+        self.venv_list.itemEntered.connect(self.show_venv_tooltip)
 
     def set_venv_dir(self, path):
         self.venv_dir = path
@@ -69,10 +76,26 @@ class VenvManagerTab(QWidget):
             if os.path.isdir(os.path.join(self.venv_dir, venv_name)):
                 item = QListWidgetItem(venv_name)
                 self.venv_list.addItem(item)
-                venv_info = self.get_venv_info(venv_name)
-                item.setToolTip(venv_info)
                 if venv_name == self.active_venv:
-                    item.setBackground(Qt.yellow)
+                    item.setBackground(Qt.green)
+                    item.setForeground(Qt.white)
+
+    def show_venv_tooltip(self, item):
+        venv_name = item.text()
+        venv_info = self.get_venv_info(venv_name)
+        QToolTip.showText(QCursor.pos(), venv_info)
+
+    def get_venv_info(self, venv_name):
+        venv_path = os.path.join(self.venv_dir, venv_name)
+        python_path = os.path.join(venv_path, "Scripts" if os.name == "nt" else "bin", "python")
+
+        try:
+            python_version = subprocess.check_output([python_path, "--version"], text=True).strip()
+            installed_packages = subprocess.check_output([python_path, "-m", "pip", "list", "--format=freeze"], text=True).strip()
+
+            return f"Python Version: {python_version}\nInstalled Packages:\n{installed_packages}"
+        except Exception as e:
+            return f"Error getting venv info: {e}"
 
     def create_venv(self):
         venv_name, ok = QInputDialog.getText(self, "Create Virtual Environment", "Enter venv name:")
@@ -126,15 +149,3 @@ class VenvManagerTab(QWidget):
                 self.refresh_venv_list()
             except Exception as e:
                 self.status_label.setText(f"Error deleting venv: {str(e)}")
-
-    def get_venv_info(self, venv_name):
-        venv_path = os.path.join(self.venv_dir, venv_name)
-        python_path = os.path.join(venv_path, "Scripts" if os.name == "nt" else "bin", "python")
-
-        try:
-            python_version = subprocess.check_output([python_path, "--version"], text=True).strip()
-            installed_packages = subprocess.check_output([python_path, "-m", "pip", "list", "--format=freeze"], text=True).strip()
-
-            return f"Python Version: {python_version}\nInstalled Packages:\n{installed_packages}"
-        except Exception as e:
-            return f"Error getting venv info: {e}"
