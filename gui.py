@@ -1,4 +1,34 @@
 import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
+from pmanager import PackageManagerTab
+from vmanager import VenvManagerTab
+import configparser
+
+class PipPackageManager(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Pip Package Manager")
+        self.setGeometry(100, 100, 800, 600)
+
+        self.config = configparser.ConfigParser()
+        self.config.read('config.ini')
+
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
+
+        tab_widget = QTabWidget()
+        layout.addWidget(tab_widget)
+
+        self.venv_manager = VenvManagerTab(self.config)
+        self.package_manager = PackageManagerTab(self.venv_manager)
+
+        tab_widget.addTab(self.venv_manager, "Virtual Environments")
+        tab_widget.addTab(self.package_manager, "Packages")
+
+        self.setStyleSheet("""
             QWidget {
                 background-color: #2b2b2b;
                 color: #ffffff;
@@ -43,9 +73,10 @@ import sys
                 color: #cccccc;
             }
         """)
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = PipPackageManager()
-    window.show()
-    sys.exit(app.exec_())
+    
+    if __name__ == "__main__":
+        app = QApplication(sys.argv)
+        app.setStyle("Fusion")  # Use Fusion style for a more modern look
+        window = PipPackageManager()
+        window.show()
+        sys.exit(app.exec_())
