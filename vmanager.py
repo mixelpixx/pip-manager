@@ -75,6 +75,7 @@ class VenvManagerTab(QWidget):
         for venv_name in os.listdir(self.venv_dir):
             if os.path.isdir(os.path.join(self.venv_dir, venv_name)):
                 item = QListWidgetItem(venv_name)
+                item.setToolTip("Hover for more information")
                 self.venv_list.addItem(item)
                 if venv_name == self.active_venv:
                     item.setBackground(Qt.green)
@@ -92,8 +93,9 @@ class VenvManagerTab(QWidget):
         try:
             python_version = subprocess.check_output([python_path, "--version"], text=True).strip()
             installed_packages = subprocess.check_output([python_path, "-m", "pip", "list", "--format=freeze"], text=True).strip()
+            package_count = len(installed_packages.split('\n'))
 
-            return f"Python Version: {python_version}\nInstalled Packages:\n{installed_packages}"
+            return f"Python Version: {python_version}\nPackages Installed: {package_count}\nPath: {venv_path}"
         except Exception as e:
             return f"Error getting venv info: {e}"
 
@@ -124,7 +126,16 @@ class VenvManagerTab(QWidget):
         msg.setText(f"Virtual environment '{venv_name}' is now active.")
         msg.setInformativeText(f"To activate it in your terminal, run:\nsource {activate_script}")
         msg.setWindowTitle("Virtual Environment Activated")
+        
+        copy_button = msg.addButton("Copy Command", QMessageBox.ActionRole)
+        msg.addButton(QMessageBox.Ok)
+        
         msg.exec_()
+        
+        if msg.clickedButton() == copy_button:
+            QApplication.clipboard().setText(f"source {activate_script}")
+            self.status_label.setText("Activation command copied to clipboard")
+        
         self.refresh_venv_list()
 
     def delete_venv(self):
