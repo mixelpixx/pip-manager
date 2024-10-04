@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import shutil
 import venv
 import configparser
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -89,6 +90,7 @@ class PackageManagerTab(QWidget):
         self.refresh_package_list()
 
     def refresh_package_list(self):
+        logging.debug("Refreshing package list")
         self.package_list.clear()
         venv_path = self.venv_manager.get_active_venv_path()
         if venv_path:
@@ -98,6 +100,7 @@ class PackageManagerTab(QWidget):
                 packages = result.stdout.strip().split('\n')
                 for package in packages:
                     self.package_list.addItem(package)
+                logging.debug(f"Packages in venv {venv_path}: {packages}")
             except subprocess.CalledProcessError as e:
                 self.status_label.setText(f"Error: {e}")
         else:
@@ -106,6 +109,7 @@ class PackageManagerTab(QWidget):
                 packages = result.stdout.strip().split('\n')
                 for package in packages:
                     self.package_list.addItem(package)
+                logging.debug(f"Global packages: {packages}")
             except subprocess.CalledProcessError as e:
                 self.status_label.setText(f"Error: {e}")
 
@@ -199,6 +203,7 @@ class VenvManagerTab(QWidget):
         self.venv_dir = self.config.get('General', 'venv_dir')
         self.active_venv = self.config.get('General', 'last_active_venv')
         self.refresh_venv_list()
+        logging.debug(f"Initialized VenvManagerTab with venv_dir: {self.venv_dir}, active_venv: {self.active_venv}")
 
     def set_venv_dir(self, path):
         self.venv_dir = path
@@ -234,6 +239,7 @@ class VenvManagerTab(QWidget):
         if ok and venv_name:
             venv_path = os.path.join(self.venv_dir, venv_name)
             try:
+                logging.debug(f"Creating venv at {venv_path}")
                 venv.create(venv_path, with_pip=True)
                 self.status_label.setText(f"Created venv: {venv_name}")
                 self.refresh_venv_list()
@@ -242,6 +248,7 @@ class VenvManagerTab(QWidget):
 
     def activate_venv(self):
         selected_items = self.venv_list.selectedItems()
+        logging.debug(f"Activating venv: {selected_items[0].text() if selected_items else 'None'}")
         if not selected_items:
             self.status_label.setText("No venv selected")
             return
@@ -261,6 +268,7 @@ class VenvManagerTab(QWidget):
 
     def delete_venv(self):
         selected_items = self.venv_list.selectedItems()
+        logging.debug(f"Deleting venv: {selected_items[0].text() if selected_items else 'None'}")
         if not selected_items:
             self.status_label.setText("No venv selected")
             return
@@ -274,7 +282,7 @@ class VenvManagerTab(QWidget):
 
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                import shutil
+                logging.debug(f"Deleting venv at {venv_path}")
                 shutil.rmtree(venv_path)
                 self.status_label.setText(f"Deleted venv: {venv_name}")
                 if self.active_venv == venv_name:
@@ -378,6 +386,7 @@ class PipPackageManager(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    logging.debug("Application started")
     window = PipPackageManager()
     window.show()
     sys.exit(app.exec_())
