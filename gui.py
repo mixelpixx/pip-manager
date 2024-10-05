@@ -73,10 +73,11 @@ class PipPackageManager(QMainWindow):
                 color: #cccccc;
             }
         """)
-    
-    if __name__ == "__main__":
-        app = QApplication(sys.argv)
-        app.setStyle("Fusion")  # Use Fusion style for a more modern look
-        window = PipPackageManager()
-        window.show()
-        sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")  # Use Fusion style for a more modern look
+    window = PipPackageManager()
+    window.show()
+    sys.exit(app.exec_())

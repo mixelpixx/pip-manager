@@ -30,6 +30,10 @@ class PackageManagerTab(QWidget):
         self.uninstall_button.clicked.connect(self.uninstall_package)
         button_layout.addWidget(self.uninstall_button)
 
+        self.update_button = QPushButton("Update Package") #Added Update button
+        self.update_button.clicked.connect(self.update_package) # Connected update button to function
+        button_layout.addWidget(self.update_button) #Added update button to layout
+
         self.refresh_button = QPushButton("Refresh List")
         self.refresh_button.clicked.connect(self.refresh_package_list)
         button_layout.addWidget(self.refresh_button)
@@ -62,29 +66,6 @@ class PackageManagerTab(QWidget):
             self.status_label.setText(f"Error refreshing package list: {e}")
 
     def uninstall_package(self):
-
-        selected_rows = self.package_table.selectionModel().selectedRows()
-        if not selected_rows:
-            self.status_label.setText("No package selected")
-            return
-        package = self.package_table.item(selected_rows[0].row(), 0).text()
-        
-        reply = QMessageBox.question(self, 'Uninstall Package', 
-                                     f"Are you sure you want to uninstall '{package}'?",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if reply == QMessageBox.Yes:
-            try:
-                venv_path = self.venv_manager.get_active_venv_path()
-                if venv_path:
-                    pip_path = os.path.join(venv_path, "Scripts" if sys.platform == "win32" else "bin", "pip")
-                    subprocess.run([pip_path, "uninstall", "-y", package], check=True)
-                else:
-                    subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", package], check=True)
-                self.status_label.setText(f"Uninstalled {package}")
-                self.refresh_package_list()
-            except subprocess.CalledProcessError as e:
-                self.status_label.setText(f"Error uninstalling {package}: {e}")
         selected_rows = self.package_table.selectionModel().selectedRows()
         if not selected_rows:
             self.status_label.setText("No package selected")
